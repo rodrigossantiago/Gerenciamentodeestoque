@@ -395,7 +395,16 @@
     }
  
     .add-row td{display:block !important; padding:10px 0 !important;}
-    .add-row td::before{display:none;}
+    .add-row td:empty{display:none !important;}
+    .add-row td::before{
+      display:block;
+      content:attr(data-label);
+      font-size:11px;
+      color:var(--text-dim);
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      margin-bottom:5px;
+    }
  
     .toast{
       left:12px;
