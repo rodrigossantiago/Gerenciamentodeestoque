@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Controle de Estoque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#11151c;
+    --surface:#1a2029;
+    --surface-2:#212935;
+    --border:#2b323c;
+    --text:#e7eaee;
+    --text-dim:#8c94a1;
+    --text-faint:#5b6371;
+    --ok:#4ade80;
+    --ok-dim:#1f3b2c;
+    --warn:#f5a623;
+    --warn-dim:#3a2c14;
+    --crit:#f0473a;
+    --crit-dim:#3a1f1c;
+    --radius:10px;
+  }
+ 
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    min-height:100vh;
+    padding:32px 24px 80px;
+  }
+ 
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; animation:none !important;}
+  }
+ 
+  .wrap{max-width:1080px; margin:0 auto;}
+ 
+  /* ---------- HEADER ---------- */
+  .header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:24px;
+    flex-wrap:wrap;
+    margin-bottom:28px;
+  }
+ 
+  .title-block .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:.18em;
+    color:var(--text-faint);
+    text-transform:uppercase;
+    margin:0 0 6px;
+  }
+ 
+  .title-block h1{
+    font-family:'Archivo', sans-serif;
+    font-weight:900;
+    font-size:clamp(28px,4vw,40px);
+    letter-spacing:-.01em;
+    margin:0;
+    color:var(--text);
+  }
+ 
+  /* signature element: live restock stamp */
+  .stamp{
+    font-family:'JetBrains Mono', monospace;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    border:2px dashed var(--ok);
+    color:var(--ok);
+    border-radius:50%;
+    width:118px;
+    height:118px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    transform:rotate(-7deg);
+    transition:color .25s, border-color .25s;
+    flex-shrink:0;
+    line-height:1.3;
+    padding:6px;
+  }
+  .stamp .stamp-n{font-size:26px; font-weight:900; font-family:'Archivo',sans-serif;}
+  .stamp.alert{ border-color:var(--crit); color:var(--crit); }
+ 
+  /* ---------- SUMMARY ---------- */
+  .summary{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+    margin-bottom:24px;
+  }
+  .summary-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+  }
+  .summary-card .label{
+    font-size:11px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    margin:0 0 4px;
+  }
+  .summary-card .value{
+    font-family:'JetBrains Mono',monospace;
+    font-size:24px;
+    font-weight:700;
+    margin:0;
+  }
+  .summary-card.warn .value{color:var(--warn);}
+  .summary-card.crit .value{color:var(--crit);}
+ 
+  /* ---------- TOOLBAR ---------- */
+  .toolbar{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:16px;
+  }
+  .search-input{
+    flex:1;
+    min-width:180px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:var(--radius);
+    padding:9px 12px;
+    font-size:14px;
+    font-family:'Inter',sans-serif;
+  }
+  .search-input::placeholder{color:var(--text-faint);}
+ 
+  .checkbox-label{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    color:var(--text-dim);
+    user-select:none;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .checkbox-label input{accent-color:var(--warn);}
+ 
+  button{
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:13px;
+    border-radius:var(--radius);
+    border:1px solid var(--border);
+    padding:9px 14px;
+    cursor:pointer;
+    background:var(--surface-2);
+    color:var(--text);
+    transition:background .15s, border-color .15s;
+    white-space:nowrap;
+  }
+  button:hover{background:#28313d;}
+  button:focus-visible, input:focus-visible{outline:2px solid var(--warn); outline-offset:1px;}
+ 
+  .btn-primary{
+    background:var(--ok);
+    color:#0d1a12;
+    border-color:var(--ok);
+  }
+  .btn-primary:hover{background:#3ec973;}
+ 
+  /* ---------- TABLE ---------- */
+  .table-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+  }
+ 
+  table{width:100%; border-collapse:collapse;}
+  thead th{
+    text-align:left;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    color:var(--text-dim);
+    font-weight:600;
+    padding:12px 14px;
+    border-bottom:1px solid var(--border);
+    background:var(--surface-2);
+  }
+  th.num, td.num{text-align:right;}
+ 
+  tbody td{
+    padding:10px 14px;
+    border-bottom:1px solid var(--border);
+    font-size:14px;
+    vertical-align:middle;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:rgba(255,255,255,0.02);}
+ 
+  .prod-name{
+    font-weight:600;
+    color:var(--text);
+  }
+ 
+  .cell-input{
+    width:64px;
+    background:transparent;
+    border:1px solid transparent;
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:14px;
+    text-align:right;
+    border-radius:6px;
+    padding:5px 6px;
+  }
+  .cell-input:hover, .cell-input:focus{
+    border-color:var(--border);
+    background:var(--surface-2);
+  }
+ 
+  .atual-val{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:600;
+  }
+ 
+  .comprar-val{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+  }
+  .comprar-sub{
+    display:block;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--text-faint);
+    font-weight:400;
+  }
+ 
+  .badge{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    padding:4px 8px;
+    border-radius:5px;
+    text-transform:uppercase;
+  }
+  .badge.ok{background:var(--ok-dim); color:var(--ok);}
+  .badge.warn{background:var(--warn-dim); color:var(--warn);}
+  .badge.crit{background:var(--crit-dim); color:var(--crit);}
+ 
+  .del-btn{
+    background:transparent;
+    border:1px solid transparent;
+    color:var(--text-faint);
+    padding:5px 7px;
+    border-radius:6px;
+  }
+  .del-btn:hover{
+    color:var(--crit);
+    background:var(--crit-dim);
+    border-color:var(--crit-dim);
+  }
+ 
+  /* add row */
+  .add-row td{
+    background:var(--surface-2);
+    padding:12px 14px;
+  }
+  .add-row input[type="text"]{
+    background:var(--bg);
+    border:1px solid var(--border);
+    color:var(--text);
+    border-radius:6px;
+    padding:8px 10px;
+    font-size:14px;
+    width:100%;
+    font-family:'Inter',sans-serif;
+  }
+  .add-row .cell-input{
+    width:64px;
+    background:var(--bg);
+    border:1px solid var(--border);
+  }
+ 
+  .empty-state{
+    padding:48px 24px;
+    text-align:center;
+    color:var(--text-dim);
+    font-size:14px;
+  }
+  .empty-state strong{display:block; color:var(--text); font-size:16px; margin-bottom:6px;}
+ 
+  .footer-note{
+    margin-top:14px;
+    font-size:12px;
+    color:var(--text-faint);
+    text-align:center;
+  }
+ 
+  .toast{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:var(--surface-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:10px 16px;
+    border-radius:var(--radius);
+    font-size:13px;
+    opacity:0;
+    transform:translateY(8px);
+    transition:opacity .2s, transform .2s;
+    pointer-events:none;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+  .toast.error{border-color:var(--crit); color:var(--crit);}
+ 
+  /* ---------- RESPONSIVE: stacked cards on mobile ---------- */
+  @media (max-width:720px){
+    body{padding:20px 14px 80px;}
+    .header{flex-direction:column;}
+    .stamp{align-self:flex-start;}
+    .summary{grid-template-columns:1fr 1fr;}
+ 
+    table, thead{display:none;}
+    .table-card{background:transparent; border:none;}
+    tbody{display:flex; flex-direction:column; gap:10px;}
+    tbody tr{
+      display:block;
+      background:var(--surface);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      padding:12px 14px;
+    }
+    tbody td{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      border-bottom:1px solid var(--border);
+      padding:8px 0;
+    }
+    tbody tr td:last-child{border-bottom:none;}
+    tbody td::before{
+      content:attr(data-label);
+      font-size:11px;
+      color:var(--text-dim);
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      margin-right:auto;
+      padding-right:10px;
+    }
+    .prod-name{text-align:right;}
+    .add-row td{display:block !important;}
+    .add-row td::before{display:none;}
+  }
+</style>
+</head>
+<body>
+ 
+<div class="wrap">
+ 
+  <div class="header">
+    <div class="title-block">
+      <p class="eyebrow">Controle de reposição</p>
+      <h1>Estoque</h1>
+    </div>
+    <div class="stamp" id="stamp">
+      <span id="stampNum" class="stamp-n">0</span>
+      <span id="stampLabel">Estoque OK</span>
+    </div>
+  </div>
+ 
+  <div class="summary">
+    <div class="summary-card">
+      <p class="label">Produtos</p>
+      <p class="value" id="sumTotal">0</p>
+    </div>
+    <div class="summary-card warn">
+      <p class="label">A repor</p>
+      <p class="value" id="sumAlert">0</p>
+    </div>
+    <div class="summary-card">
+      <p class="label">Unidades a comprar</p>
+      <p class="value" id="sumUnits">0</p>
+    </div>
+  </div>
+ 
+  <div class="toolbar">
+    <input type="text" class="search-input" id="searchInput" placeholder="Buscar produto...">
+    <label class="checkbox-label">
+      <input type="checkbox" id="onlyAlertCheck">
+      Mostrar apenas a repor
+    </label>
+    <button id="exportBtn">Exportar CSV</button>
+  </div>
+ 
+  <div class="table-card">
+    <table>
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th class="num">Caixas</th>
+          <th class="num">Soltas</th>
+          <th class="num">Un./caixa</th>
+          <th class="num">Atual</th>
+          <th class="num">Mínimo</th>
+          <th class="num">Comprar</th>
+          <th class="num">Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <!-- linhas inseridas via JS -->
+      </tbody>
+      <tbody>
+        <tr class="add-row">
+          <td data-label="Produto"><input type="text" id="newNome" placeholder="Nome do novo produto"></td>
+          <td data-label="Caixas"><input type="number" class="cell-input" id="newCaixas" value="0" min="0" step="1"></td>
+          <td data-label="Soltas"><input type="number" class="cell-input" id="newSoltas" value="0" min="0" step="1"></td>
+          <td data-label="Un./caixa"><input type="number" class="cell-input" id="newPorCaixa" value="1" min="0" step="1"></td>
+          <td data-label=""></td>
+          <td data-label="Mínimo"><input type="number" class="cell-input" id="newMinimo" value="0" min="0" step="1"></td>
+          <td data-label=""></td>
+          <td data-label=""></td>
+          <td><button class="btn-primary" id="addBtn" style="width:100%;">+ Adicionar</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="empty-state" id="emptyState" style="display:none;">
+      <strong>Nenhum produto cadastrado</strong>
+      Adicione o primeiro produto na linha abaixo da tabela.
+    </div>
+  </div>
+ 
+  <p class="footer-note">Os dados ficam salvos automaticamente neste navegador.</p>
+ 
+</div>
+ 
+<div class="toast" id="toast"></div>
+ 
+<script>
+(function(){
+  const STORAGE_KEY = 'estoque:items';
+  let items = [];
+  let loaded = false;
+ 
+  const tbody = document.getElementById('tbody');
+  const emptyState = document.getElementById('emptyState');
+  const searchInput = document.getElementById('searchInput');
+  const onlyAlertCheck = document.getElementById('onlyAlertCheck');
+  const toast = document.getElementById('toast');
+ 
+  function showToast(msg, isError){
+    toast.textContent = msg;
+    toast.className = 'toast show' + (isError ? ' error' : '');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>{ toast.className = 'toast'; }, 2600);
+  }
+ 
+  function uid(){
+    return (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2));
+  }
+ 
+  function calcAtual(item){
+    const caixas = Number(item.caixas) || 0;
+    const soltas = Number(item.soltas) || 0;
+    const porCaixa = Number(item.porCaixa) || 0;
+    return caixas * porCaixa + soltas;
+  }
+ 
+  function calcComprarUnidades(item){
+    const atual = calcAtual(item);
+    const minimo = Number(item.minimo) || 0;
+    return Math.max(0, minimo - atual);
+  }
+ 
+  function calcComprarCaixas(item){
+    const porCaixa = Number(item.porCaixa) || 0;
+    if (porCaixa <= 0) return null;
+    const un = calcComprarUnidades(item);
+    if (un <= 0) return 0;
+    return Math.ceil(un / porCaixa);
+  }
+ 
+  async function loadItems(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      items = raw ? JSON.parse(raw) : [];
+    }catch(e){
+      items = [];
+    }
+    loaded = true;
+    render();
+  }
+ 
+  async function saveItems(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    }catch(e){
+      showToast('Erro ao salvar os dados.', true);
+    }
+  }
+ 
+  function fmt(n){
+    return Number(n).toLocaleString('pt-BR');
+  }
+ 
+  function render(){
+    const query = searchInput.value.trim().toLowerCase();
+    const onlyAlert = onlyAlertCheck.checked;
+ 
+    let totalAlert = 0;
+    let totalUnitsToBuy = 0;
+    items.forEach(it=>{
+      if (calcComprarUnidades(it) > 0){
+        totalAlert++;
+        totalUnitsToBuy += calcComprarUnidades(it);
+      }
+    });
+ 
+    document.getElementById('sumTotal').textContent = fmt(items.length);
+    document.getElementById('sumAlert').textContent = fmt(totalAlert);
+    document.getElementById('sumUnits').textContent = fmt(totalUnitsToBuy);
+ 
+    const stamp = document.getElementById('stamp');
+    const stampNum = document.getElementById('stampNum');
+    const stampLabel = document.getElementById('stampLabel');
+    stampNum.textContent = totalAlert;
+    if (totalAlert > 0){
+      stamp.classList.add('alert');
+      stampLabel.textContent = totalAlert === 1 ? 'item a repor' : 'itens a repor';
+    } else {
+      stamp.classList.remove('alert');
+      stampLabel.textContent = 'Estoque OK';
+    }
+ 
+    const visible = items.filter(it=>{
+      if (query && !it.nome.toLowerCase().includes(query)) return false;
+      if (onlyAlert && calcComprarUnidades(it) <= 0) return false;
+      return true;
+    });
+ 
+    tbody.innerHTML = '';
+    emptyState.style.display = items.length === 0 ? 'block' : 'none';
+ 
+    visible.forEach(it=>{
+      const atual = calcAtual(it);
+      const comprarUn = calcComprarUnidades(it);
+      const comprarCx = calcComprarCaixas(it);
+      const minimo = Number(it.minimo) || 0;
+ 
+      let badgeClass = 'ok', badgeText = 'OK';
+      if (comprarUn > 0){
+        if (atual <= 0){
+          badgeClass = 'crit'; badgeText = 'Zerado';
+        } else {
+          badgeClass = 'warn'; badgeText = 'Repor';
+        }
+      }
+ 
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td data-label="Produto" class="prod-name">${escapeHtml(it.nome)}</td>
+        <td data-label="Caixas" class="num"><input type="number" class="cell-input" min="0" step="1" value="${it.caixas}" data-field="caixas" data-id="${it.id}"></td>
+        <td data-label="Soltas" class="num"><input type="number" class="cell-input" min="0" step="1" value="${it.soltas}" data-field="soltas" data-id="${it.id}"></td>
+        <td data-label="Un./caixa" class="num"><input type="number" class="cell-input" min="0" step="1" value="${it.porCaixa}" data-field="porCaixa" data-id="${it.id}"></td>
+        <td data-label="Atual" class="num atual-val">${fmt(atual)}</td>
+        <td data-label="Mínimo" class="num"><input type="number" class="cell-input" min="0" step="1" value="${minimo}" data-field="minimo" data-id="${it.id}"></td>
+        <td data-label="Comprar" class="num comprar-val">${fmt(comprarUn)}${comprarCx !== null && comprarUn > 0 ? `<span class="comprar-sub">≈ ${fmt(comprarCx)} cx</span>` : ''}</td>
+        <td data-label="Status" class="num"><span class="badge ${badgeClass}">${badgeText}</span></td>
+        <td style="text-align:right;"><button class="del-btn" data-del="${it.id}" aria-label="Excluir produto" title="Excluir">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+ 
+    tbody.querySelectorAll('input[data-field]').forEach(inp=>{
+      inp.addEventListener('change', onFieldChange);
+    });
+    tbody.querySelectorAll('button[data-del]').forEach(btn=>{
+      btn.addEventListener('click', onDelete);
+    });
+  }
+ 
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+ 
+  function onFieldChange(e){
+    const id = e.target.getAttribute('data-id');
+    const field = e.target.getAttribute('data-field');
+    const item = items.find(i=>i.id === id);
+    if (!item) return;
+    let val = parseInt(e.target.value, 10);
+    if (isNaN(val) || val < 0) val = 0;
+    item[field] = val;
+    render();
+    saveItems();
+  }
+ 
+  function onDelete(e){
+    const id = e.target.getAttribute('data-del');
+    items = items.filter(i=>i.id !== id);
+    render();
+    saveItems();
+  }
+ 
+  document.getElementById('addBtn').addEventListener('click', ()=>{
+    const nomeInput = document.getElementById('newNome');
+    const nome = nomeInput.value.trim();
+    if (!nome){
+      nomeInput.focus();
+      showToast('Informe o nome do produto.', true);
+      return;
+    }
+    const item = {
+      id: uid(),
+      nome: nome,
+      caixas: parseInt(document.getElementById('newCaixas').value, 10) || 0,
+      soltas: parseInt(document.getElementById('newSoltas').value, 10) || 0,
+      porCaixa: parseInt(document.getElementById('newPorCaixa').value, 10) || 0,
+      minimo: parseInt(document.getElementById('newMinimo').value, 10) || 0,
+    };
+    items.push(item);
+    nomeInput.value = '';
+    document.getElementById('newCaixas').value = 0;
+    document.getElementById('newSoltas').value = 0;
+    document.getElementById('newPorCaixa').value = 1;
+    document.getElementById('newMinimo').value = 0;
+    render();
+    saveItems();
+    showToast('Produto adicionado.');
+  });
+ 
+  document.getElementById('newNome').addEventListener('keydown', (e)=>{
+    if (e.key === 'Enter') document.getElementById('addBtn').click();
+  });
+ 
+  searchInput.addEventListener('input', render);
+  onlyAlertCheck.addEventListener('change', render);
+ 
+  document.getElementById('exportBtn').addEventListener('click', ()=>{
+    if (items.length === 0){
+      showToast('Não há produtos para exportar.', true);
+      return;
+    }
+    const header = ['Produto','Caixas','Soltas','Unidades por caixa','Estoque atual','Estoque minimo','Comprar (unidades)','Comprar (caixas aprox.)'];
+    const rows = items.map(it=>{
+      const atual = calcAtual(it);
+      const comprarUn = calcComprarUnidades(it);
+      const comprarCx = calcComprarCaixas(it);
+      return [
+        it.nome,
+        it.caixas,
+        it.soltas,
+        it.porCaixa,
+        atual,
+        it.minimo,
+        comprarUn,
+        comprarCx === null ? '' : comprarCx
+      ];
+    });
+    const csvLines = [header, ...rows].map(r=>
+      r.map(cell=>{
+        const s = String(cell);
+        return /[",;\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+      }).join(',')
+    );
+    const csv = '\uFEFF' + csvLines.join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'estoque.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+ 
+  loadItems();
+})();
+</script>
+ 
+</body>
+</html>
+ 
