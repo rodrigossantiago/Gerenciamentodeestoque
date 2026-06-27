@@ -157,6 +157,31 @@
   }
   .checkbox-label input{accent-color:var(--warn);}
  
+  .view-toggle{
+    display:inline-flex;
+    border:1px solid var(--border);
+    border-radius:999px;
+    overflow:hidden;
+    flex-shrink:0;
+  }
+  .view-toggle-btn{
+    border:none;
+    border-radius:0;
+    background:var(--surface-2);
+    color:var(--text-dim);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    padding:9px 14px;
+  }
+  .view-toggle-btn:hover:not(.active){background:#28313d;}
+  .view-toggle-btn.active{
+    background:var(--ok);
+    color:#0d1a12;
+  }
+ 
   button{
     font-family:'Inter',sans-serif;
     font-weight:600;
@@ -332,10 +357,84 @@
   .toast.show{opacity:1; transform:translateY(0);}
   .toast.error{border-color:var(--crit); color:var(--crit);}
  
-  /* ---------- RESPONSIVE: mesmo layout do computador, com rolagem horizontal ---------- */
+  /* ---------- MODO COMPUTADOR em telas estreitas: mesma tabela, com rolagem horizontal ---------- */
   @media (max-width:720px){
-    body{overflow-x:auto; padding:24px 16px 90px;}
-    .wrap{min-width:1000px;}
+    body:not(.mode-mobile){overflow-x:auto; padding:24px 16px 90px;}
+    body:not(.mode-mobile) .wrap{min-width:1000px;}
+  }
+ 
+  /* ---------- MODO CELULAR: cartões empilhados, escolhido manualmente no seletor ---------- */
+  body.mode-mobile .header{flex-direction:column;}
+  body.mode-mobile .stamp{align-self:flex-start; width:96px; height:96px;}
+  body.mode-mobile .summary{grid-template-columns:1fr 1fr;}
+  body.mode-mobile .summary-card:nth-child(3){grid-column:1 / -1;}
+ 
+  body.mode-mobile table{display:block;}
+  body.mode-mobile thead{display:none;}
+  body.mode-mobile .table-card{background:transparent; border:none;}
+  body.mode-mobile tbody{display:flex; flex-direction:column; gap:10px;}
+  body.mode-mobile tbody tr{
+    display:block;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:6px 14px;
+  }
+  body.mode-mobile tbody td{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:1px solid var(--border);
+    padding:11px 0;
+    min-height:30px;
+  }
+  body.mode-mobile tbody tr td:last-child{border-bottom:none;}
+  body.mode-mobile tbody td::before{
+    content:attr(data-label);
+    font-size:11px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    margin-right:auto;
+    padding-right:10px;
+  }
+  body.mode-mobile .prod-name{text-align:right; font-size:15px;}
+ 
+  body.mode-mobile .cell-input{
+    width:84px;
+    height:38px;
+    font-size:16px;
+    padding:6px 8px;
+    border-color:var(--border);
+    background:var(--surface-2);
+  }
+  body.mode-mobile .search-input,
+  body.mode-mobile .add-row input[type="text"]{
+    font-size:16px;
+    padding:11px 12px;
+  }
+  body.mode-mobile .del-btn{
+    padding:8px 10px;
+    font-size:15px;
+  }
+ 
+  body.mode-mobile .add-row td{display:block !important; padding:10px 0 !important;}
+  body.mode-mobile .add-row td:empty{display:none !important;}
+  body.mode-mobile .add-row td::before{
+    display:block;
+    content:attr(data-label);
+    font-size:11px;
+    color:var(--text-dim);
+    text-transform:uppercase;
+    letter-spacing:.05em;
+    margin-bottom:5px;
+  }
+ 
+  body.mode-mobile .toast{
+    left:12px;
+    right:12px;
+    bottom:16px;
+    text-align:center;
   }
 </style>
 </head>
@@ -370,6 +469,10 @@
   </div>
  
   <div class="toolbar">
+    <div class="view-toggle" role="group" aria-label="Escolher modelo de visualização">
+      <button type="button" class="view-toggle-btn active" data-mode="desktop">Computador</button>
+      <button type="button" class="view-toggle-btn" data-mode="mobile">Celular</button>
+    </div>
     <input type="text" class="search-input" id="searchInput" placeholder="Buscar produto...">
     <label class="checkbox-label">
       <input type="checkbox" id="onlyAlertCheck">
@@ -624,6 +727,35 @@
   searchInput.addEventListener('input', render);
   onlyAlertCheck.addEventListener('change', render);
  
+  const VIEW_MODE_KEY = 'estoque:viewMode';
+ 
+  function applyViewMode(mode){
+    document.body.classList.toggle('mode-mobile', mode === 'mobile');
+    document.querySelectorAll('.view-toggle-btn').forEach(btn=>{
+      btn.classList.toggle('active', btn.getAttribute('data-mode') === mode);
+    });
+  }
+ 
+  function loadViewMode(){
+    let mode = 'desktop';
+    try{
+      const saved = localStorage.getItem(VIEW_MODE_KEY);
+      if (saved === 'mobile' || saved === 'desktop') mode = saved;
+    }catch(e){}
+    applyViewMode(mode);
+  }
+ 
+  document.querySelectorAll('.view-toggle-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const mode = btn.getAttribute('data-mode');
+      applyViewMode(mode);
+      try{ localStorage.setItem(VIEW_MODE_KEY, mode); }catch(e){}
+    });
+  });
+ 
+  loadViewMode();
+ 
+ 
   document.getElementById('exportBtn').addEventListener('click', ()=>{
     if (items.length === 0){
       showToast('Não há produtos para exportar.', true);
@@ -669,3 +801,4 @@
  
 </body>
 </html>
+ 
