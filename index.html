@@ -332,86 +332,10 @@
   .toast.show{opacity:1; transform:translateY(0);}
   .toast.error{border-color:var(--crit); color:var(--crit);}
  
-  /* ---------- RESPONSIVE: stacked cards on mobile ---------- */
+  /* ---------- RESPONSIVE: mesmo layout do computador, com rolagem horizontal ---------- */
   @media (max-width:720px){
-    body{padding:18px 12px 90px;}
-    .header{flex-direction:column;}
-    .stamp{align-self:flex-start; width:96px; height:96px;}
-    .summary{grid-template-columns:1fr 1fr;}
-    .summary-card:nth-child(3){grid-column:1 / -1;}
- 
-    .toolbar{gap:8px;}
-    .search-input{min-width:0; width:100%; flex-basis:100%;}
-    .checkbox-label{font-size:14px;}
-    button{padding:11px 16px; font-size:14px; min-height:44px;}
- 
-    table{display:block;}
-    thead{display:none;}
-    .table-card{background:transparent; border:none;}
-    tbody{display:flex; flex-direction:column; gap:10px;}
-    tbody tr{
-      display:block;
-      background:var(--surface);
-      border:1px solid var(--border);
-      border-radius:var(--radius);
-      padding:6px 14px;
-    }
-    tbody td{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      border-bottom:1px solid var(--border);
-      padding:11px 0;
-      min-height:30px;
-    }
-    tbody tr td:last-child{border-bottom:none;}
-    tbody td::before{
-      content:attr(data-label);
-      font-size:11px;
-      color:var(--text-dim);
-      text-transform:uppercase;
-      letter-spacing:.05em;
-      margin-right:auto;
-      padding-right:10px;
-    }
-    .prod-name{text-align:right; font-size:15px;}
- 
-    /* campos maiores e sem zoom automático no iOS (precisa de font-size >=16px) */
-    .cell-input{
-      width:84px;
-      height:38px;
-      font-size:16px;
-      padding:6px 8px;
-      border-color:var(--border);
-      background:var(--surface-2);
-    }
-    .search-input, .add-row input[type="text"]{
-      font-size:16px;
-      padding:11px 12px;
-    }
-    .del-btn{
-      padding:8px 10px;
-      font-size:15px;
-    }
- 
-    .add-row td{display:block !important; padding:10px 0 !important;}
-    .add-row td:empty{display:none !important;}
-    .add-row td::before{
-      display:block;
-      content:attr(data-label);
-      font-size:11px;
-      color:var(--text-dim);
-      text-transform:uppercase;
-      letter-spacing:.05em;
-      margin-bottom:5px;
-    }
- 
-    .toast{
-      left:12px;
-      right:12px;
-      bottom:16px;
-      text-align:center;
-    }
+    body{overflow-x:auto; padding:24px 16px 90px;}
+    .wrap{min-width:1000px;}
   }
 </style>
 </head>
@@ -745,4 +669,3 @@
  
 </body>
 </html>
- 
