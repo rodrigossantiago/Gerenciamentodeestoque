@@ -334,10 +334,16 @@
  
   /* ---------- RESPONSIVE: stacked cards on mobile ---------- */
   @media (max-width:720px){
-    body{padding:20px 14px 80px;}
+    body{padding:18px 12px 90px;}
     .header{flex-direction:column;}
-    .stamp{align-self:flex-start;}
+    .stamp{align-self:flex-start; width:96px; height:96px;}
     .summary{grid-template-columns:1fr 1fr;}
+    .summary-card:nth-child(3){grid-column:1 / -1;}
+ 
+    .toolbar{gap:8px;}
+    .search-input{min-width:0; width:100%; flex-basis:100%;}
+    .checkbox-label{font-size:14px;}
+    button{padding:11px 16px; font-size:14px; min-height:44px;}
  
     table, thead{display:none;}
     .table-card{background:transparent; border:none;}
@@ -347,14 +353,15 @@
       background:var(--surface);
       border:1px solid var(--border);
       border-radius:var(--radius);
-      padding:12px 14px;
+      padding:6px 14px;
     }
     tbody td{
       display:flex;
       justify-content:space-between;
       align-items:center;
       border-bottom:1px solid var(--border);
-      padding:8px 0;
+      padding:11px 0;
+      min-height:30px;
     }
     tbody tr td:last-child{border-bottom:none;}
     tbody td::before{
@@ -366,9 +373,35 @@
       margin-right:auto;
       padding-right:10px;
     }
-    .prod-name{text-align:right;}
-    .add-row td{display:block !important;}
+    .prod-name{text-align:right; font-size:15px;}
+ 
+    /* campos maiores e sem zoom automático no iOS (precisa de font-size >=16px) */
+    .cell-input{
+      width:84px;
+      height:38px;
+      font-size:16px;
+      padding:6px 8px;
+      border-color:var(--border);
+      background:var(--surface-2);
+    }
+    .search-input, .add-row input[type="text"]{
+      font-size:16px;
+      padding:11px 12px;
+    }
+    .del-btn{
+      padding:8px 10px;
+      font-size:15px;
+    }
+ 
+    .add-row td{display:block !important; padding:10px 0 !important;}
     .add-row td::before{display:none;}
+ 
+    .toast{
+      left:12px;
+      right:12px;
+      bottom:16px;
+      text-align:center;
+    }
   }
 </style>
 </head>
@@ -432,11 +465,11 @@
       <tbody>
         <tr class="add-row">
           <td data-label="Produto"><input type="text" id="newNome" placeholder="Nome do novo produto"></td>
-          <td data-label="Caixas"><input type="number" class="cell-input" id="newCaixas" value="0" min="0" step="1"></td>
-          <td data-label="Soltas"><input type="number" class="cell-input" id="newSoltas" value="0" min="0" step="1"></td>
-          <td data-label="Un./caixa"><input type="number" class="cell-input" id="newPorCaixa" value="1" min="0" step="1"></td>
+          <td data-label="Caixas"><input type="number" inputmode="numeric" class="cell-input" id="newCaixas" value="0" min="0" step="1"></td>
+          <td data-label="Soltas"><input type="number" inputmode="numeric" class="cell-input" id="newSoltas" value="0" min="0" step="1"></td>
+          <td data-label="Un./caixa"><input type="number" inputmode="numeric" class="cell-input" id="newPorCaixa" value="1" min="0" step="1"></td>
           <td data-label=""></td>
-          <td data-label="Mínimo"><input type="number" class="cell-input" id="newMinimo" value="0" min="0" step="1"></td>
+          <td data-label="Mínimo"><input type="number" inputmode="numeric" class="cell-input" id="newMinimo" value="0" min="0" step="1"></td>
           <td data-label=""></td>
           <td data-label=""></td>
           <td><button class="btn-primary" id="addBtn" style="width:100%;">+ Adicionar</button></td>
@@ -578,11 +611,11 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td data-label="Produto" class="prod-name">${escapeHtml(it.nome)}</td>
-        <td data-label="Caixas" class="num"><input type="number" class="cell-input" min="0" step="1" value="${it.caixas}" data-field="caixas" data-id="${it.id}"></td>
-        <td data-label="Soltas" class="num"><input type="number" class="cell-input" min="0" step="1" value="${it.soltas}" data-field="soltas" data-id="${it.id}"></td>
-        <td data-label="Un./caixa" class="num"><input type="number" class="cell-input" min="0" step="1" value="${it.porCaixa}" data-field="porCaixa" data-id="${it.id}"></td>
+        <td data-label="Caixas" class="num"><input type="number" inputmode="numeric" class="cell-input" min="0" step="1" value="${it.caixas}" data-field="caixas" data-id="${it.id}"></td>
+        <td data-label="Soltas" class="num"><input type="number" inputmode="numeric" class="cell-input" min="0" step="1" value="${it.soltas}" data-field="soltas" data-id="${it.id}"></td>
+        <td data-label="Un./caixa" class="num"><input type="number" inputmode="numeric" class="cell-input" min="0" step="1" value="${it.porCaixa}" data-field="porCaixa" data-id="${it.id}"></td>
         <td data-label="Atual" class="num atual-val">${fmt(atual)}</td>
-        <td data-label="Mínimo" class="num"><input type="number" class="cell-input" min="0" step="1" value="${minimo}" data-field="minimo" data-id="${it.id}"></td>
+        <td data-label="Mínimo" class="num"><input type="number" inputmode="numeric" class="cell-input" min="0" step="1" value="${minimo}" data-field="minimo" data-id="${it.id}"></td>
         <td data-label="Comprar" class="num comprar-val">${fmt(comprarUn)}${comprarCx !== null && comprarUn > 0 ? `<span class="comprar-sub">≈ ${fmt(comprarCx)} cx</span>` : ''}</td>
         <td data-label="Status" class="num"><span class="badge ${badgeClass}">${badgeText}</span></td>
         <td style="text-align:right;"><button class="del-btn" data-del="${it.id}" aria-label="Excluir produto" title="Excluir">✕</button></td>
@@ -702,4 +735,3 @@
  
 </body>
 </html>
- 
